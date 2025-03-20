@@ -1,22 +1,17 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mapa Scrollytelling</title>
+
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.0.0/mapbox-gl.js"></script>
   <script src="https://unpkg.com/scrollama"></script>
   <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
   <link href="https://api.mapbox.com/mapbox-gl-js/v3.0.0/mapbox-gl.css" rel="stylesheet">
   <style>
-    /* Contenedor principal */
+
     .voc-container {
       display: flex;
       flex-direction: column;
       align-items: center;
       font-family: 'Guardian Text Sans Regular', sans-serif;
     }
-    /* Estilos del mapa */
+
     .voc-map {
       position: fixed;
       top: 0;
@@ -24,12 +19,12 @@
       width: 100%;
       height: 100vh;
       z-index: 0;
-      overflow: hidden; /* Elimina la barra de desplazamiento del mapa */
+      overflow: hidden; 
     }
     .voc-map::-webkit-scrollbar {
       display: none;
     }
-    /* Leyenda (fija dentro del mapa) */
+
     .voc-legend {
       position: absolute;
       top: 20px;
@@ -57,7 +52,7 @@
 
     .voc-imagen-caja {
   text-align: center;
-  margin: 15px 0; /* Igual a los márgenes de .voc-texto-caja y .voc-ladillo-titulo */
+  margin: 15px 0; 
 }
 
 .voc-step img {
@@ -68,7 +63,7 @@
 }
 
 
-    /* Sección de scrollytelling */
+
     .voc-scrolly {
       position: relative;
       z-index: 1;
@@ -76,7 +71,7 @@
       max-width: 600px;
       margin: 0 auto;
     }
-    /* Pasos de scroll */
+
     .voc-step {
       margin: 100vh auto;
       padding: 10px;
@@ -107,7 +102,6 @@
 }
 
 
-    /* Media query para móviles */
     @media (max-width: 699px) {
       .voc-step {
         font-size: 14px;
@@ -119,8 +113,7 @@
       }
     }
   </style>
-</head>
-<body>
+
   <div class="voc-container">
     <div id="voc-map" class="voc-map">
       <!-- Leyenda dentro del mapa -->
@@ -257,14 +250,14 @@
             const scrollTotal = document.documentElement.scrollHeight;
             const windowHeight = window.innerHeight;
             const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;            
-            if (scrollTop > lastScrollTop) { /* Scroll abajo*/            
+            if (scrollTop > lastScrollTop) {           
                 if(scrollTop <= 15){
                     parent.postMessage("scroll-down-start", "https://www.diariovasco.com");
                 }
                 if (scrollTop + windowHeight >= scrollTotal - 15) {
                     parent.postMessage("scroll-down-finish", "https://www.diariovasco.com");
                 }
-            } else {  /* Scroll arriba*/
+            } else { 
                 if(scrollTop <= 15){
                     parent.postMessage("scroll-up-finish", "https://www.diariovasco.com");
                 }     
@@ -333,8 +326,8 @@
         source: 'renta-alquiler',
         'source-layer': 'renta-alquiler-bueno-0blaqq',
         layout: {
-          'visibility': 'none' // Oculta la capa al inicio
-        }, // Ajusta este valor según el nombre real de la capa en Mapbox Studio
+          'visibility': 'none' 
+        }, 
         paint: {
             'fill-color': [
               'step',
@@ -357,7 +350,7 @@
           source: 'voc-barrios-don',
           'source-layer': 'renta-barrios-donosti-adzwx1', 
           layout: {
-            'visibility': 'none' // Oculta la capa al inicio
+            'visibility': 'none' 
           },
           paint: {
               'fill-color': [
@@ -420,7 +413,7 @@ scroller.setup({
     const dataset = element.dataset.dataset;
 
 
-    if (!isNaN(lon) && !isNaN(lat) && !isNaN(zoom)) { // Asegurarse de que las coordenadas y zoom sean válidos
+    if (!isNaN(lon) && !isNaN(lat) && !isNaN(zoom)) { 
         if (dataset === 'renta-alquiler') {
           map.setLayoutProperty('voc-edificios-layer', 'visibility', 'none');
           map.setLayoutProperty('voc-edificios-3d', 'visibility', 'none');
@@ -469,7 +462,7 @@ scroller.setup({
             ['>=', ['get', 'antigüedad'], range[0]],
             ['<=', ['get', 'antigüedad'], range[1]]
           ]);
-          map.setPitch(0); // Restablecer el pitch a 0 para mapas 2D
+          map.setPitch(0);
           map.flyTo({
             center: [lon, lat],
             zoom: zoom
@@ -481,5 +474,4 @@ scroller.setup({
 
     });
   </script>
-</body>
-</html>
+
