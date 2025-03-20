@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mapa Scrollytelling</title>
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.0.0/mapbox-gl.js"></script>
+  <script src="https://unpkg.com/scrollama"></script>
+  <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.0.0/mapbox-gl.css" rel="stylesheet">
+  <style>
+    /* Contenedor principal */
+    .voc-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-family: 'Guardian Text Sans Regular', sans-serif;
+    }
+    /* Estilos del mapa */
+    .voc-map {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      z-index: 0;
+      overflow: hidden; /* Elimina la barra de desplazamiento del mapa */
+    }
+    .voc-map::-webkit-scrollbar {
+      display: none;
+    }
+    /* Leyenda (fija dentro del mapa) */
+    .voc-legend {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 14px;
+      color: white;
+      box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+      z-index: 10;
+    }
+    .voc-legend div {
+      display: flex;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+    .voc-legend span {
+      width: 15px;
+      height: 15px;
+      border-radius: 3px;
+      display: inline-block;
+      margin-right: 8px;
+    }
+
+    .voc-imagen-caja {
+  text-align: center;
+  margin: 15px 0; /* Igual a los márgenes de .voc-texto-caja y .voc-ladillo-titulo */
+}
+
+.voc-step img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+
+    /* Sección de scrollytelling */
+    .voc-scrolly {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    /* Pasos de scroll */
+    .voc-step {
+      margin: 100vh auto;
+      padding: 10px;
+      background: rgb(255, 255, 255);
+      opacity: 0.9;
+      font-size: 15px;
+      max-width: 80%;
+      box-shadow: 0px 4px 6px rgba(255, 255, 255, 0.1);
+      color: #202020;
+    }
+    .voc-step:first-child {
+      margin-top: 10vh;
+    }
+    .voc-ladillo-titulo {
+      font-family: 'Guardian Sans Semibold', sans-serif;
+      font-size: 19px;
+      color: #202020;
+      padding-bottom: 15px;
+    }
+    .voc-texto-caja {
+      font-family: 'Guardian Text Sans Regular', sans-serif;
+      font-size: 15px;
+      line-height: 18px;
+      color: #202020;
+    }
+    .hide-legend ~ .voc-legend {
+    display: none;
+}
+
+
+    /* Media query para móviles */
+    @media (max-width: 699px) {
+      .voc-step {
+        font-size: 14px;
+        max-width: 95%;
+        padding: 15px;
+      }
+      .voc-legend {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="voc-container">
+    <div id="voc-map" class="voc-map">
+      <!-- Leyenda dentro del mapa -->
+      <div class="voc-legend">
+        <div><span style="background:#db0025"></span> Edificios anteriores a 1900</div>
+        <div><span style="background:#ff8b26"></span> Edificios entre 1901 y 1959</div>
+        <div><span style="background:#ffda33"></span> Edificios entre 1960 y 1979</div>
+        <div><span style="background:#18e96c"></span> Edificios entre 1980 y 2000</div>
+        <div><span style="background:#34c9ff"></span> Edificios entre 2001 y 2013</div>
+        <div><span style="background:#8a2be2"></span> Edificios entre 2014 y 2024</div>
+      </div>
+    </div>
+    <div class="voc-scrolly">
+      <div class="voc-step" id="step-1" data-dataset="edi_edad-8huanu" data-lon="-1.981973" data-lat="43.319038" data-zoom="12" data-range="0,2024">
+        <div class="voc-ladillo-titulo">Total de edificios en Gipuzkoa</div>
+        <div class="voc-texto-caja">Texto xxx xx xxx xx xxx xx xxxx xxxxxxxxx xx xx xx xx xx xxx xxxxx</div>
+      </div>
+      
+      <div class="voc-step" id="step-2" data-lon="-1.981973" data-lat="43.319038" data-zoom="14" data-range="1960,1980">
+        <div class="voc-ladillo-titulo">Edificios construidos entre 1960 y 1980</div>
+        <div class="voc-texto-caja">Es la época del desarrollismo. Gráfico % de edificios construidos.</div>
+        <div style="margin-top: 15px; text-align: center;">
+          <iframe title="Porcentaje de edificios de 1960-1980 en Gipuzkoa" 
+                  aria-label="Gráfico de anillo" 
+                  id="datawrapper-chart-p1U15" 
+                  src="https://datawrapper.dwcdn.net/p1U15/2/" 
+                  scrolling="no" 
+                  frameborder="0" 
+                  style="width: 50%; border: none;" 
+                  height="393" 
+                  data-external="1">
+          </iframe>
+      </div>
+      <script type="text/javascript">
+        (function() {
+            "use strict";
+            window.addEventListener("message", function(event) {
+                if (event.data["datawrapper-height"]) {
+                    var iframes = document.querySelectorAll("iframe");
+                    for (var key in event.data["datawrapper-height"]) {
+                        for (var i = 0; i < iframes.length; i++) {
+                            if (iframes[i].contentWindow === event.source) {
+                                iframes[i].style.height = event.data["datawrapper-height"][key] + "px";
+                            }
+                        }
+                    }
+                }
+            });
+        })();
+    </script>
+      </div>
+
+      <div class="voc-step" id="step-3" data-lon="-2.4724460664478642" data-lat="43.18396817346494" data-zoom="18" data-range="1961,1981" data-dataset="voc-edificios-3d">
+        <div class="voc-ladillo-titulo">Torres Unzaga, Eibar</div>
+        <div class="voc-texto-caja">Xxxxxxxx xxx xx xx xx xx xxx xx xx xx xx x xxx xxx</div>
+        <div class="voc-imagen-caja">
+          <img src="https://cdn.diariovasco.com/diariovasco/images/vivienda/unzaga-torre.jpg" alt="Torres Unzaga, Eibar">
+        </div>
+      </div>
+
+      <div class="voc-step" id="step-4" data-lon="-1.9478584192133925" data-lat="43.281984578293645" data-zoom="14" data-range="0,2024">
+        <div class="voc-texto-caja">Y a partir de entonces baja el número de viviendas xxxxxx</div>
+      </div>
+
+
+      <div class="voc-step" id="step-5" data-lon="-1.9478584192133925" data-lat="43.281984578293645" data-zoom="14" data-range="0,2024">
+        <div class="voc-texto-caja">xxxxxxxxxxx xxxxx xxxx xxx</div>
+        <iframe title="Vivienda libre vs VPO en Gipuzkoa (especial vivienda)" aria-label="Interactive line chart" id="datawrapper-chart-WwIVt" src="https://datawrapper.dwcdn.net/WwIVt/6/" scrolling="no" frameborder="0" style="width: 0; min-width: 100% !important; border: none;" height="100" data-external="1"></iframe><script type="text/javascript">!function(){"use strict";window.addEventListener("message",(function(a){if(void 0!==a.data["datawrapper-height"]){var e=document.querySelectorAll("iframe");for(var t in a.data["datawrapper-height"])for(var r,i=0;r=e[i];i++)if(r.contentWindow===a.source){var d=a.data["datawrapper-height"][t]+"px";r.style.height=d}}}))}();
+        </script>
+      </div>
+
+      
+      <div class="voc-step" id="step-6" data-lon="-1.981973" data-lat="43.319038" data-zoom="14" data-range="0,2024">
+        <div class="voc-ladillo-titulo">Donde más VPO hay</div>
+        <div class="voc-texto-caja">Xxxxx xxx xxx xxx xxx xx</div>
+      </div>
+
+
+        <div class="voc-step" id="step-7" data-lon="-1.981973" data-lat="43.319038" data-zoom="14" data-range="0,2024">
+            <div class="voc-ladillo-titulo">Donde menos VPO hay</div>
+            <div class="voc-texto-caja">Xxxxx xxx xxx xxx xxx xx</div>
+
+      </div>
+      <div class="voc-step" id="step-8" data-lon="-1.981973" data-lat="43.319038" data-zoom="14" data-range="2014,2024">
+        <div class="voc-ladillo-titulo">Edifios de la última década</div>
+        <div class="voc-texto-caja">Xxxxxx xx xx x x xx xx x x xx</div>
+        </div>
+
+
+        <div class="voc-step" id="step-9" data-lon="-2.181973" data-lat="43.219038" data-zoom="9" data-range="0,2024" data-dataset="renta-alquiler">
+            <div class="voc-ladillo-titulo">Evolución de la venta libre de viviendas</div>
+            <div class="voc-texto-caja">xxxxxxxxxxxxxxxxxxxxxx</div>
+            <iframe title="Precio medio por metro cuadrado construido en las ventas de vivienda libre" aria-label="Interactive line chart" id="datawrapper-chart-03NX9" src="https://datawrapper.dwcdn.net/03NX9/3/" scrolling="no" frameborder="0" style="width: 0; min-width: 100% !important; border: none;" height="371" data-external="1"></iframe><script type="text/javascript">!function(){"use strict";window.addEventListener("message",(function(a){if(void 0!==a.data["datawrapper-height"]){var e=document.querySelectorAll("iframe");for(var t in a.data["datawrapper-height"])for(var r,i=0;r=e[i];i++)if(r.contentWindow===a.source){var d=a.data["datawrapper-height"][t]+"px";r.style.height=d}}}))}();
+            </script>
+          </div>
+    
+    
+      <div class="voc-step hide-legend" id="step-10" data-lon="-1.9840468337192563" data-lat="43.32023242496837"  data-zoom="17" data-range="0,2024"  data-dataset="voc-edificios-3d"   data-bearing="60">
+        <div class="voc-texto-caja">El metro cuadrado más caro a la venta se encuentra en Donostia en xxxxxx.</div>
+        <div class="voc-imagen-caja">
+            <img src="https://cdn.diariovasco.com/diariovasco/images/vivienda/unzaga-torre.jpg" alt="Calle Hernani, Donostia">
+          </div>
+    </div>
+
+    <div class="voc-step hide-legend" id="step-11" data-lon="-2.4124404081966806" data-lat="43.174340531932735" data-zoom="16" data-range="0,2024"  data-dataset="voc-edificios-3d">
+        <div class="voc-texto-caja">El metro cuadrado más barato a la venta se encuentra en Soraluze??? en xxxxxx.</div>
+        <div class="voc-imagen-caja">
+            <img src="https://cdn.diariovasco.com/diariovasco/images/vivienda/unzaga-torre.jpg" alt="xxxxxxi, xxxxxx">
+          </div>
+    </div>
+
+    <div class="voc-step" id="step-12" data-lon="-1.981973" data-lat="43.319038" data-zoom="14" data-range="2014,2024">
+        <div class="voc-ladillo-titulo">Evolución del alquiler en Gipuzkoa a falta de datos de estadística. Por municipio??</div>
+        <div class="voc-texto-caja">Xxxxxx xx xx x x xx xx x x xx</div>
+        </div>
+    
+      <div class="voc-step" id="step-13" data-lon="-1.981973" data-lat="43.319038" data-zoom="12" data-range="0,2024" data-dataset="voc-barrios-don">
+        <div class="voc-ladillo-titulo">Evolución del alquiler en Gipuzkoa</div>
+        <div class="voc-texto-caja">Volvemos a mostrar los edificios según su antigüedad.</div>
+      </div>
+      
+
+      <div class="voc-step" id="step-14" data-lon="-1.9431102111161913" data-lat="43.323330632135246" data-zoom="12" data-range="0,2024" data-dataset="final">
+        <div class="voc-texto-caja">Etxebide....Volvemos a mostrar los edificios según su antigüedad.</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    mapboxgl.accessToken = 'pk.eyJ1Ijoid2VibWFzdGVyZHZhIiwiYSI6ImNsaWJsazEzczA5eXUzc21vczNzdDNhYW8ifQ.GDR-i5GFu9pRny0TTfShFA';
+
+    let lastScrollTop = 0;
+        window.addEventListener("scroll", function() {
+            const scrollTotal = document.documentElement.scrollHeight;
+            const windowHeight = window.innerHeight;
+            const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;            
+            if (scrollTop > lastScrollTop) { /* Scroll abajo*/            
+                if(scrollTop <= 15){
+                    parent.postMessage("scroll-down-start", "https://www.diariovasco.com");
+                }
+                if (scrollTop + windowHeight >= scrollTotal - 15) {
+                    parent.postMessage("scroll-down-finish", "https://www.diariovasco.com");
+                }
+            } else {  /* Scroll arriba*/
+                if(scrollTop <= 15){
+                    parent.postMessage("scroll-up-finish", "https://www.diariovasco.com");
+                }     
+                if (scrollTop + windowHeight >= scrollTotal - 15) {
+                    parent.postMessage("scroll-up-start", "https://www.diariovasco.com");
+                }       
+            }
+            lastScrollTop = scrollTop;  
+
+        });
+
+    const map = new mapboxgl.Map({
+      container: 'voc-map',
+      style: 'mapbox://styles/mapbox/dark-v11',
+      center: [-1.9431102111161913, 43.323330632135246],
+      zoom: 12
+    });
+    map.scrollZoom.disable();
+    map.dragPan.disable();
+    map.doubleClickZoom.disable();
+    map.touchZoomRotate.disable();
+
+    map.on('load', () => {
+      map.addSource('voc-edificios', {
+        type: 'vector',
+        url: 'mapbox://webmasterdva.56cur0pv'
+      });
+      map.addSource('voc-edificios-3d', {
+        type: 'vector',
+        url: 'mapbox://mapbox.mapbox-streets-v8'
+    });
+      map.addSource('renta-alquiler', {
+        type: 'vector',
+        url: 'mapbox://webmasterdva.bnokgznc'
+      });
+
+      map.addSource('voc-barrios-don', {
+        type: 'vector',
+        url: 'mapbox://webmasterdva.c9u3vm6h'
+      });
+
+      map.addLayer({
+        id: 'voc-edificios-layer',
+        type: 'fill',
+        source: 'voc-edificios',
+        'source-layer': 'edi_edad-8huanu',
+        paint: {
+          'fill-color': [
+            'step',
+            ['get', 'antigüedad'],
+            '#db0025', 1900,
+            '#ff8b26', 1960,
+            '#ffda33', 1980,
+            '#18e96c', 2000,
+            '#34c9ff', 2013,
+            '#8a2be2'
+          ],
+          'fill-opacity': 0.6,
+          'fill-outline-color': '#FFFFFF'
+        }
+      });
+
+      map.addLayer({
+        id: 'renta-alquiler-layer',
+        type: 'fill',
+        source: 'renta-alquiler',
+        'source-layer': 'renta-alquiler-bueno-0blaqq',
+        layout: {
+          'visibility': 'none' // Oculta la capa al inicio
+        }, // Ajusta este valor según el nombre real de la capa en Mapbox Studio
+        paint: {
+            'fill-color': [
+              'step',
+              ['get', 'precio'],
+              '#db0025', 15,
+              '#ff8b26', 20,
+              '#ffda33', 23,
+              '#18e96c', 26,
+              '#34c9ff', 30,
+              '#8a2be2'
+            ],
+            'fill-opacity': 0.6,
+            'fill-outline-color': '#FFFFFF'
+          }
+        });
+
+        map.addLayer({
+          id: 'voc-barrios-don',
+          type: 'fill',
+          source: 'voc-barrios-don',
+          'source-layer': 'renta-barrios-donosti-adzwx1', 
+          layout: {
+            'visibility': 'none' // Oculta la capa al inicio
+          },
+          paint: {
+              'fill-color': [
+                'step',
+                ['get', 'renta'],
+                '#db0025', 800,
+                '#ff8b26', 850,
+                '#ffda33', 950,
+                '#18e96c', 1050,
+                '#34c9ff', 1200,
+                '#8a2be2'
+              ],
+              'fill-opacity': 0.6,
+              'fill-outline-color': '#FFFFFF'
+            }
+          });
+
+        map.addLayer({
+            id: 'voc-edificios-3d',
+            type: 'fill-extrusion',
+            source: 'voc-edificios-3d',
+            'source-layer': 'building',
+            paint: {
+                'fill-extrusion-color': '#aaa',
+                'fill-extrusion-height': ['get', 'height'],
+                'fill-extrusion-base': ['get', 'min_height'],
+                'fill-extrusion-opacity': 0.9
+            }
+        });
+
+
+
+      map.setFog({
+        range: [-1, 2],
+        color: 'white',
+        'high-color': '#245bde',
+        'horizon-blend': 0.1
+      });
+
+      map.addSource('mapbox-terrain', {
+        type: 'raster-dem',
+        url: 'mapbox://mapbox.terrain-rgb',
+        tileSize: 512,
+        maxzoom: 14
+      });
+      map.setTerrain({ source: 'mapbox-terrain', exaggeration: 1.5 });
+
+      const scroller = scrollama();
+
+      
+scroller.setup({
+    step: ".voc-step",
+    offset: 0.2,
+    debug: false
+}).onStepEnter(({ element }) => {
+    const lon = parseFloat(element.dataset.lon);
+    const lat = parseFloat(element.dataset.lat);
+    const zoom = parseFloat(element.dataset.zoom);
+    const range = element.dataset.range ? element.dataset.range.split(',').map(Number) : [0, 2024];
+    const dataset = element.dataset.dataset;
+
+
+    if (!isNaN(lon) && !isNaN(lat) && !isNaN(zoom)) { // Asegurarse de que las coordenadas y zoom sean válidos
+        if (dataset === 'renta-alquiler') {
+          map.setLayoutProperty('voc-edificios-layer', 'visibility', 'none');
+          map.setLayoutProperty('voc-edificios-3d', 'visibility', 'none');
+          map.setLayoutProperty('voc-barrios-don', 'visibility', 'none');
+          map.setLayoutProperty('renta-alquiler-layer', 'visibility', 'visible');
+          map.setFilter('renta-alquiler-layer', [
+            'all',
+            ['>=', ['get', 'precio'], range[0]],
+            ['<=', ['get', 'precio'], range[1]]
+          ]);
+          map.flyTo({
+            center: [lon, lat],
+            zoom: zoom
+          });
+        } else if (dataset === 'voc-edificios-3d') {
+          map.setLayoutProperty('voc-edificios-3d', 'visibility', 'visible');
+          map.setLayoutProperty('voc-edificios-layer', 'visibility', 'none');
+          map.setLayoutProperty('voc-barrios-don', 'visibility', 'none');
+          map.setLayoutProperty('renta-alquiler-layer', 'visibility', 'none');
+          map.setPitch(60);
+          map.flyTo({
+            center: [lon, lat],
+            zoom: zoom
+          });
+        } else if (dataset === 'voc-barrios-don') {
+          map.setLayoutProperty('voc-barrios-don', 'visibility', 'visible');
+          map.setLayoutProperty('voc-edificios-3d', 'visibility', 'none');
+          map.setLayoutProperty('voc-edificios-layer', 'visibility', 'none');
+          map.setLayoutProperty('renta-alquiler-layer', 'visibility', 'none');
+          map.setFilter('voc-barrios-don', [
+            'all',
+            ['>=', ['get', 'renta'], range[0]],
+            ['<=', ['get', 'renta'], range[1]]
+          ]);
+          map.flyTo({
+            center: [lon, lat],
+            zoom: zoom
+          });
+        } else {
+          map.setLayoutProperty('voc-edificios-layer', 'visibility', 'visible');
+          map.setLayoutProperty('voc-edificios-3d', 'visibility', 'none');
+          map.setLayoutProperty('voc-barrios-don', 'visibility', 'none');
+          map.setLayoutProperty('renta-alquiler-layer', 'visibility', 'none');
+          map.setFilter('voc-edificios-layer', [
+            'all',
+            ['>=', ['get', 'antigüedad'], range[0]],
+            ['<=', ['get', 'antigüedad'], range[1]]
+          ]);
+          map.setPitch(0); // Restablecer el pitch a 0 para mapas 2D
+          map.flyTo({
+            center: [lon, lat],
+            zoom: zoom
+          });
+        }
+      }
+
+});
+
+    });
+  </script>
+</body>
+</html>
